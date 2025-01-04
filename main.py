@@ -3,10 +3,13 @@ import copy
 import os
 import sys
 
+from pygame.examples.cursors import image
+
 pygame.init()
 size = width, height = 620, 620
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Life')
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -24,12 +27,8 @@ def load_image(name, colorkey=None):
     return image
 
 
-class Board(pygame.sprite.Sprite):
-    image = load_image('animal_cell.png')
-    image = pygame.transform.scale(image, (30, 30))
+class Board:
     def __init__(self, width, height):
-        super().__init__(all_sprites)
-        self.rect = self.image.get_rect()
         self.width = width
         self.height = height
         self.board = [[0] * width for _ in range(height)]
@@ -43,21 +42,11 @@ class Board(pygame.sprite.Sprite):
         self.cell_size = cell_size
 
     def render(self, screen):
-        cell_image = load_image('animal_cell.png')
         x, y = self.left, self.top
         for row in range(1, len(self.board) - 1):
             for col in range(1, len(self.board[row]) - 1):
-                if self.board[col][row] == 0:
-                    pygame.draw.rect(screen, (0, 0, 0), (x, y, self.cell_size, self.cell_size))
-                    pygame.draw.rect(screen, (255, 255, 255), (x, y, self.cell_size, self.cell_size), 1)
-                else:
-                    pygame.draw.rect(screen, (0, 0, 0), (x, y, self.cell_size, self.cell_size))
-                    pygame.draw.rect(screen, (255, 255, 255), (x, y, self.cell_size, self.cell_size), 1)
-                    cell = pygame.sprite.Sprite(all_sprites)
-                    cell.image = cell_image
-                    cell.rect = cell.image.get_rect()
-                    cell.rect.x = x + (self.cell_size // 2)
-                    cell.rect.y = y + (self.cell_size // 2)
+                pygame.draw.rect(screen, (0, 0, 0), (x, y, self.cell_size, self.cell_size))
+                pygame.draw.rect(screen, (255, 255, 255), (x, y, self.cell_size, self.cell_size), 1)
                 x += self.cell_size
             x = self.left
             y += self.cell_size
@@ -69,7 +58,7 @@ class Board(pygame.sprite.Sprite):
             return None
         else:
             x, y = (mouse_pos[0] - self.left + self.cell_size) // self.cell_size, (
-                        mouse_pos[1] - self.top + self.cell_size) // self.cell_size
+                    mouse_pos[1] - self.top + self.cell_size) // self.cell_size
             return (x, y)
 
     def click(self, mouse_pos):
@@ -77,12 +66,19 @@ class Board(pygame.sprite.Sprite):
         if cell:
             x, y = cell
             self.board[x][y] = (self.board[x][y] + 1) % 2
+            if self.board[x][y] == 1:
+                pos_x = self.left + x * self.cell_size + (self.cell_size // 2)
+                pos_y = self.top + y * self.cell_size + (self.cell_size // 2)
+                Cells((pos_x, pos_y), self.cell_size)
 
     def get_new_board(self, new_board):
         self.board = new_board
 
     def give_board(self):
         return self.board
+
+    def give_cell_size(self):
+        return self.cell_size
 
 
 class Life:
@@ -103,6 +99,20 @@ class Life:
                     if neighbours.count(1) < 2 or neighbours.count(1) > 3:
                         board_copy[row][col] = 0
         return board_copy
+
+
+class Cells(pygame.sprite.Sprite):
+    image = load_image('animal_cell.png')
+
+    def __init__(self, pos, cell_size):
+        super().__init__(all_sprites)
+        self.cell_size = cell_size
+        Cells.image = pygame.transform.scale(Cells.image, (self.cell_size, self.cell_size))
+        self.image = Cells.image
+        self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+        print('a')
 
 
 if __name__ == '__main__':
@@ -147,8 +157,8 @@ if __name__ == '__main__':
             board.get_new_board(new.next_move())
 
         screen.fill((0, 0, 0))
-        board.render(screen)
         all_sprites.draw(screen)
         all_sprites.update()
+        board.render(screen)
         pygame.display.flip()
         clock.tick(timer)
