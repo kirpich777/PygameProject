@@ -9,7 +9,7 @@ pygame.init()
 size = width, height = 620, 620
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Life')
-
+cells_lst = []
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -65,11 +65,16 @@ class Board:
         cell = self.get_cell(mouse_pos)
         if cell:
             x, y = cell
+            pos_x = self.left + x * self.cell_size - self.cell_size
+            pos_y = self.top + y * self.cell_size - self.cell_size
             self.board[x][y] = (self.board[x][y] + 1) % 2
             if self.board[x][y] == 1:
-                pos_x = self.left + x * self.cell_size + (self.cell_size // 2)
-                pos_y = self.top + y * self.cell_size + (self.cell_size // 2)
-                Cells((pos_x, pos_y), self.cell_size)
+                object_cell = Cells((pos_x, pos_y), self.cell_size)
+                cells_lst.append(object_cell)
+            else:
+                for c in cells_lst:
+                    if c.rect.x == pos_x and c.rect.y == pos_y:
+                        del c
 
     def get_new_board(self, new_board):
         self.board = new_board
@@ -112,7 +117,6 @@ class Cells(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
         self.rect.y = pos[1]
-        print('a')
 
 
 if __name__ == '__main__':
@@ -157,8 +161,8 @@ if __name__ == '__main__':
             board.get_new_board(new.next_move())
 
         screen.fill((0, 0, 0))
+        board.render(screen)
         all_sprites.draw(screen)
         all_sprites.update()
-        board.render(screen)
         pygame.display.flip()
         clock.tick(timer)
