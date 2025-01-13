@@ -4,6 +4,7 @@ import os
 import sys
 
 from pygame.examples.cursors import image
+from pygame import  Color
 
 pygame.init()
 size = width, height = 620, 620
@@ -46,7 +47,20 @@ class Board:
         for row in range(1, len(self.board) - 1):
             for col in range(1, len(self.board[row]) - 1):
                 pygame.draw.rect(screen, (0, 0, 0), (x, y, self.cell_size, self.cell_size))
-                pygame.draw.rect(screen, (255, 255, 255), (x, y, self.cell_size, self.cell_size), 1)
+                pygame.draw.rect(screen, Color(255, 255, 255, 128), (x, y, self.cell_size, self.cell_size), 1)
+                surface = pygame.Surface((self.cell_size, self.cell_size), pygame.SRCALPHA)
+                surface.fill((0, 0, 0, 128))
+                screen.blit(surface, (x, y))
+                pos_x = self.left + row * self.cell_size - self.cell_size
+                pos_y = self.top + col * self.cell_size - self.cell_size
+                if self.board[row][col] == 1:
+                    object_cell = Cells((pos_x, pos_y), self.cell_size)
+                    cells_lst.append(object_cell)
+                else:
+                    for c in cells_lst:
+                        if c.rect.x == pos_x and c.rect.y == pos_y:
+                            all_sprites.remove(c)
+                            cells_lst.remove(c)
                 x += self.cell_size
             x = self.left
             y += self.cell_size
@@ -74,7 +88,8 @@ class Board:
             else:
                 for c in cells_lst:
                     if c.rect.x == pos_x and c.rect.y == pos_y:
-                        del c
+                        all_sprites.remove(c)
+                        cells_lst.remove(c)
 
     def get_new_board(self, new_board):
         self.board = new_board
