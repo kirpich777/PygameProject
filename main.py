@@ -6,11 +6,19 @@ import sys
 from pygame.examples.cursors import image
 from pygame import  Color
 
+
 pygame.init()
+FPS = 60
 size = width, height = 620, 620
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Life')
 cells_lst = []
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -26,6 +34,39 @@ def load_image(name, colorkey=None):
     else:
         image = image.convert_alpha()
     return image
+
+
+def start_screen():
+    intro_text = ["LIFE",
+                  "Rules:",
+                  "Revive do not destroy"]
+
+    fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
+    screen.blit(fon, (0, 0))
+    font_name = os.path.join('data', 'ofont.ru_NK123.ttf')
+    font = pygame.font.Font(font_name, 40)
+    text_coord = 200
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        if line == "Revive do not destroy":
+            intro_rect.x = 130
+        else:
+            intro_rect.x = 260
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 class Board:
@@ -139,6 +180,7 @@ if __name__ == '__main__':
 
     clock = pygame.time.Clock()
     timer = 10
+    start_screen()
 
     board = Board(30, 30)
     board.set_view(30, 30, 20)
