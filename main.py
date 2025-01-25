@@ -2,10 +2,10 @@ import pygame
 import copy
 import os
 import sys
+import random
 
 from pygame.examples.cursors import image
-from pygame import  Color
-
+from pygame import Color
 
 pygame.init()
 FPS = 60
@@ -13,6 +13,13 @@ size = width, height = 620, 620
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Life')
 cells_lst = []
+GRAVITY = 9
+
+with open('data/pre-last board', mode="w") as f:
+    for i in range(28):
+        for j in range(28):
+            f.write('0')
+        f.write('\n')
 
 
 def terminate():
@@ -124,6 +131,7 @@ class Board:
             pos_y = self.top + y * self.cell_size - self.cell_size
             self.board[x][y] = (self.board[x][y] + 1) % 2
             if self.board[x][y] == 1:
+                create_particles(pygame.mouse.get_pos())
                 object_cell = Cells((pos_x, pos_y), self.cell_size)
                 cells_lst.append(object_cell)
             else:
@@ -147,6 +155,14 @@ class Life:
         self.board = board
 
     def next_move(self):
+        with open('data/last_board', mode='w') as f:
+            for row in range(1, len(self.board) - 1):
+                for col in range(1, len(self.board[row]) - 1):
+                    if self.board[row][col] == 0:
+                        f.write('0')
+                    else:
+                        f.write('1')
+                f.write('\n')
         board_copy = copy.deepcopy(self.board)
         for row in range(1, len(self.board) - 1):
             for col in range(1, len(self.board[row]) - 1):
@@ -166,7 +182,7 @@ class Cells(pygame.sprite.Sprite):
     image = load_image('animal_cell.png')
 
     def __init__(self, pos, cell_size):
-        super().__init__(all_sprites)
+        super().__init__(cells_group, all_sprites)
         self.cell_size = cell_size
         Cells.image = pygame.transform.scale(Cells.image, (self.cell_size, self.cell_size))
         self.image = Cells.image
@@ -175,8 +191,40 @@ class Cells(pygame.sprite.Sprite):
         self.rect.y = pos[1]
 
 
+screen_rect = (0, 0, width, height)
+
+def create_particles(position):
+    particle_count = 10
+    numbers = range(-7, 6)
+    for _ in range(particle_count):
+        Particle(position, random.choice(numbers), random.choice(numbers))
+
+class Particle(pygame.sprite.Sprite):
+    fire = [load_image("particle.png")]
+    for scale in (5, 7, 10, 12, 15, 20, 25):
+        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(particles_group, all_sprites)
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+        self.velocity = [dx, dy]
+        self.rect.x, self.rect.y = pos
+        self.gravity = GRAVITY
+
+    def update(self):
+        self.velocity[1] += self.gravity
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        if not self.rect.colliderect(screen_rect):
+            self.kill()
+
+
 if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
+
+    cells_group = pygame.sprite.Group()
+    particles_group = pygame.sprite.Group()
 
     clock = pygame.time.Clock()
     timer = 10
@@ -202,7 +250,7 @@ if __name__ == '__main__':
                 if stop:
                     if event.button == 3:
                         stop = False
-                    else:
+                    if event.button == 1:
                         board.click(event.pos)
                 elif event.button == 3:
                     stop = True
