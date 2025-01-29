@@ -14,6 +14,7 @@ screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Life')
 cells_lst = []
 GRAVITY = 9
+clock = pygame.time.Clock()
 
 with open('data/pre-last board', mode="w") as f:
     for i in range(28):
@@ -41,6 +42,89 @@ def load_image(name, colorkey=None):
     else:
         image = image.convert_alpha()
     return image
+
+
+def main_cycle():
+    timer = 10
+    running = True
+    stop = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if stop:
+                    if event.key == 32:
+                        stop = False
+                elif event.key == 32:
+                    stop = True
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if stop:
+                    if event.button == 3:
+                        stop = False
+                    if event.button == 1:
+                        board.click(event.pos)
+                elif event.button == 3:
+                    stop = True
+                    continue
+                if event.button == 5:
+                    if not timer == 1:
+                        timer -= 1
+                elif event.button == 4:
+                    timer += 1
+
+        if stop is False:
+            new.board = board.give_board()
+            board.get_new_board(new.next_move())
+
+        screen.fill((0, 0, 0))
+        board.render(screen)
+        all_sprites.draw(screen)
+        all_sprites.update()
+        pygame.display.flip()
+        clock.tick(timer)
+
+
+def end_screen():
+    score = '0'
+    text = ['Your colony lasted',
+            score,
+            'seconds']
+    fon = pygame.transform.scale(load_image('ending.jpg'), (width, height))
+    screen.blit(fon, (0, 0))
+    font_name = os.path.join('data', 'ofont.ru_NK123.ttf')
+
+    font = pygame.font.Font(font_name, 40)
+    string_rendered = font.render(text[0], 1, pygame.Color('white'))
+    intro_rect = string_rendered.get_rect()
+    intro_rect.top = 150
+    intro_rect.x = 150
+    screen.blit(string_rendered, intro_rect)
+
+    font = pygame.font.Font(font_name, 80)
+    string_rendered = font.render(text[1], 1, pygame.Color('white'))
+    intro_rect = string_rendered.get_rect()
+    intro_rect.top = 230
+    intro_rect.x = 300
+    screen.blit(string_rendered, intro_rect)
+
+    font = pygame.font.Font(font_name, 40)
+    string_rendered = font.render(text[2], 1, pygame.Color('white'))
+    intro_rect = string_rendered.get_rect()
+    intro_rect.top = 350
+    intro_rect.x = 250
+    screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                main_cycle()
+                return
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 def start_screen():
@@ -154,6 +238,11 @@ class Life:
     def __init__(self, board):
         self.board = board
 
+    def check_evolution(self, new):
+        if self.board == new:
+            return 0
+        return 1
+
     def next_move(self):
         with open('data/last_board', mode='w') as f:
             for row in range(1, len(self.board) - 1):
@@ -175,7 +264,12 @@ class Life:
                 else:
                     if neighbours.count(1) < 2 or neighbours.count(1) > 3:
                         board_copy[row][col] = 0
-        return board_copy
+        if self.check_evolution(board_copy) == 0:
+            pygame.display.flip()
+            clock.tick(1)
+            end_screen()
+        else:
+            return board_copy
 
 
 class Cells(pygame.sprite.Sprite):
@@ -193,11 +287,13 @@ class Cells(pygame.sprite.Sprite):
 
 screen_rect = (0, 0, width, height)
 
+
 def create_particles(position):
     particle_count = 10
     numbers = range(-7, 6)
     for _ in range(particle_count):
         Particle(position, random.choice(numbers), random.choice(numbers))
+
 
 class Particle(pygame.sprite.Sprite):
     fire = [load_image("particle.png")]
@@ -222,52 +318,12 @@ class Particle(pygame.sprite.Sprite):
 
 if __name__ == '__main__':
     all_sprites = pygame.sprite.Group()
-
     cells_group = pygame.sprite.Group()
     particles_group = pygame.sprite.Group()
-
-    clock = pygame.time.Clock()
-    timer = 10
-    start_screen()
 
     board = Board(30, 30)
     board.set_view(30, 30, 20)
     new = Life(board.give_board())
 
-    running = True
-    stop = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.KEYDOWN:
-                if stop:
-                    if event.key == 32:
-                        stop = False
-                elif event.key == 32:
-                    stop = True
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if stop:
-                    if event.button == 3:
-                        stop = False
-                    if event.button == 1:
-                        board.click(event.pos)
-                elif event.button == 3:
-                    stop = True
-                    continue
-                if event.button == 5:
-                    if not timer == 1:
-                        timer -= 1
-                elif event.button == 4:
-                    timer += 1
-
-        if stop is False:
-            new.board = board.give_board()
-            board.get_new_board(new.next_move())
-
-        screen.fill((0, 0, 0))
-        board.render(screen)
-        all_sprites.draw(screen)
-        all_sprites.update()
-        pygame.display.flip()
-        clock.tick(timer)
+    start_screen()
+    main_cycle()
