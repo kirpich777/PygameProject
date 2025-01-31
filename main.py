@@ -3,13 +3,14 @@ import copy
 import os
 import sys
 import random
+import time
 
 from pygame.examples.cursors import image
 from pygame import Color
 
 pygame.init()
 FPS = 60
-size = width, height = 620, 620
+size = width, height = 660, 620
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Life')
 cells_lst = []
@@ -56,22 +57,38 @@ def main_cycle():
                 if stop:
                     if event.key == 32:
                         stop = False
+                        time_counter.start()
                 elif event.key == 32:
                     stop = True
+                    time_counter.pause()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if stop:
                     if event.button == 3:
                         stop = False
+                        time_counter.start()
                     if event.button == 1:
-                        board.click(event.pos)
+                        if button.rect.collidepoint(event.pos):
+                            seconds = time_counter.get_time()
+                            time_counter.start_time = 0
+                            time_counter.paused_time = 0
+                            end_screen(round(seconds))
+                        else:
+                            board.click(event.pos)
                 elif event.button == 3:
                     stop = True
+                    time_counter.pause()
                     continue
                 if event.button == 5:
                     if not timer == 1:
                         timer -= 1
                 elif event.button == 4:
                     timer += 1
+                elif event.button == 1:
+                    if button.rect.collidepoint(event.pos):
+                        seconds = time_counter.get_time()
+                        time_counter.start_time = 0
+                        time_counter.paused_time = 0
+                        end_screen(round(seconds))
 
         if stop is False:
             new.board = board.give_board()
@@ -85,8 +102,8 @@ def main_cycle():
         clock.tick(timer)
 
 
-def end_screen():
-    score = '0'
+def end_screen(sec):
+    score = str(sec)
     text = ['Your colony lasted',
             score,
             'seconds']
@@ -98,21 +115,21 @@ def end_screen():
     string_rendered = font.render(text[0], 1, pygame.Color('white'))
     intro_rect = string_rendered.get_rect()
     intro_rect.top = 150
-    intro_rect.x = 150
+    intro_rect.x = 170
     screen.blit(string_rendered, intro_rect)
 
     font = pygame.font.Font(font_name, 80)
     string_rendered = font.render(text[1], 1, pygame.Color('white'))
     intro_rect = string_rendered.get_rect()
     intro_rect.top = 230
-    intro_rect.x = 300
+    intro_rect.x = 320
     screen.blit(string_rendered, intro_rect)
 
     font = pygame.font.Font(font_name, 40)
     string_rendered = font.render(text[2], 1, pygame.Color('white'))
     intro_rect = string_rendered.get_rect()
     intro_rect.top = 350
-    intro_rect.x = 250
+    intro_rect.x = 270
     screen.blit(string_rendered, intro_rect)
 
     while True:
@@ -160,6 +177,37 @@ def start_screen():
         clock.tick(FPS)
 
 
+class Restart(pygame.sprite.Sprite):
+    restart_button = load_image('restart.png')
+
+    def __init__(self):
+        super().__init__(all_sprites)
+        self.image = pygame.transform.scale(Restart.restart_button, (40, 40))
+        self.rect = self.image.get_rect()
+        self.rect.x = 605
+        self.rect.y = 290
+
+
+class GameTimer:
+    def __init__(self):
+        self.start_time = 0
+        self.paused_time = 0
+        self.running = False
+
+    def start(self):
+        if not self.running:
+            self.start_time = time.time() - self.paused_time
+            self.running = True
+
+    def pause(self):
+        if self.running:
+            self.paused_time = time.time() - self.start_time
+            self.running = False
+
+    def get_time(self):
+        return (time.time() - self.start_time) if self.running else self.paused_time
+
+
 class Board:
     def __init__(self, width, height):
         self.width = width
@@ -198,8 +246,8 @@ class Board:
             y += self.cell_size
 
     def get_cell(self, mouse_pos):
-        if (mouse_pos[0] > self.left + self.width * self.cell_size or mouse_pos[
-            1] > self.top + self.height * self.cell_size) \
+        if (mouse_pos[0] > self.left + (self.width - 2) * self.cell_size or mouse_pos[
+            1] > self.top + (self.height - 2)  * self.cell_size) \
                 or (mouse_pos[0] < self.left or mouse_pos[1] < self.top):
             return None
         else:
@@ -232,6 +280,11 @@ class Board:
 
     def give_cell_size(self):
         return self.cell_size
+
+    def clear_board(self):
+        self.board = [[0] * width for _ in range(height)]
+        self.set_view(30, 30, 20)
+        new.board = self.give_board()
 
 
 class Life:
@@ -267,7 +320,10 @@ class Life:
         if self.check_evolution(board_copy) == 0:
             pygame.display.flip()
             clock.tick(1)
-            end_screen()
+            seconds = time_counter.get_time()
+            time_counter.start_time = 0
+            time_counter.paused_time = 0
+            end_screen(round(seconds))
         else:
             return board_copy
 
@@ -324,6 +380,10 @@ if __name__ == '__main__':
     board = Board(30, 30)
     board.set_view(30, 30, 20)
     new = Life(board.give_board())
+    button = Restart()
+
+    time_counter = GameTimer()
 
     start_screen()
     main_cycle()
+
