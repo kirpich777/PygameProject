@@ -103,6 +103,16 @@ def main_cycle():
 
 
 def end_screen(sec):
+    global board, new
+
+    time_counter.start_time = 0
+    time_counter.paused_time = 0
+
+    board = Board(30, 30)
+    board.set_view(30, 30, 20)
+    new = Life(board.give_board())
+    print(sec)
+
     score = str(sec)
     text = ['Your colony lasted',
             score,
@@ -282,10 +292,9 @@ class Board:
         return self.cell_size
 
     def clear_board(self):
-        self.board = [[0] * width for _ in range(height)]
-        self.set_view(30, 30, 20)
-        new.board = self.give_board()
-
+        board = Board(30, 30)
+        board.set_view(30, 30, 20)
+        new = Life(board.give_board())
 
 class Life:
     def __init__(self, board):
