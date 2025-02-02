@@ -5,7 +5,6 @@ import sys
 import random
 import time
 
-from pygame.examples.cursors import image
 from pygame import Color
 
 pygame.init()
@@ -17,18 +16,14 @@ cells_lst = []
 GRAVITY = 9
 clock = pygame.time.Clock()
 
-with open('data/pre-last board', mode="w") as f:
-    for i in range(28):
-        for j in range(28):
-            f.write('0')
-        f.write('\n')
 
-
+# прерывание игры
 def terminate():
     pygame.quit()
     sys.exit()
 
 
+# загрузка изображения
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
@@ -45,6 +40,7 @@ def load_image(name, colorkey=None):
     return image
 
 
+# основной цикл игры
 def main_cycle():
     timer = 10
     running = True
@@ -102,11 +98,11 @@ def main_cycle():
         clock.tick(timer)
 
 
+# экран окончания
 def end_screen(sec):
-    global board, new
+    global board, new, time_counter
 
-    time_counter.start_time = 0
-    time_counter.paused_time = 0
+    time_counter = GameTimer()
 
     board = Board(30, 30)
     board.set_view(30, 30, 20)
@@ -154,6 +150,7 @@ def end_screen(sec):
         clock.tick(FPS)
 
 
+# стартовый экран
 def start_screen():
     intro_text = ["LIFE",
                   "Rules:",
@@ -187,6 +184,7 @@ def start_screen():
         clock.tick(FPS)
 
 
+# класс, отвечающий за кнопку рестарта
 class Restart(pygame.sprite.Sprite):
     restart_button = load_image('restart.png')
 
@@ -218,6 +216,7 @@ class GameTimer:
         return (time.time() - self.start_time) if self.running else self.paused_time
 
 
+# отрисовка поля
 class Board:
     def __init__(self, width, height):
         self.width = width
@@ -257,7 +256,7 @@ class Board:
 
     def get_cell(self, mouse_pos):
         if (mouse_pos[0] > self.left + (self.width - 2) * self.cell_size or mouse_pos[
-            1] > self.top + (self.height - 2)  * self.cell_size) \
+            1] > self.top + (self.height - 2) * self.cell_size) \
                 or (mouse_pos[0] < self.left or mouse_pos[1] < self.top):
             return None
         else:
@@ -296,6 +295,8 @@ class Board:
         board.set_view(30, 30, 20)
         new = Life(board.give_board())
 
+
+# расчет следующего вида доски
 class Life:
     def __init__(self, board):
         self.board = board
@@ -337,6 +338,7 @@ class Life:
             return board_copy
 
 
+# класс клеток
 class Cells(pygame.sprite.Sprite):
     image = load_image('animal_cell.png')
 
@@ -360,6 +362,7 @@ def create_particles(position):
         Particle(position, random.choice(numbers), random.choice(numbers))
 
 
+# класс анимационных эффектов
 class Particle(pygame.sprite.Sprite):
     fire = [load_image("particle.png")]
     for scale in (5, 7, 10, 12, 15, 20, 25):
@@ -395,4 +398,3 @@ if __name__ == '__main__':
 
     start_screen()
     main_cycle()
-
